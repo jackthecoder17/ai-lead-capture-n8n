@@ -1,0 +1,670 @@
+{
+  "name": "Lead Capture v1",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Let's work together",
+        "formDescription": "I would love for us to work together",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Company"
+            },
+            {
+              "fieldLabel": "Service",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Website"
+                  },
+                  {
+                    "option": "Web App"
+                  },
+                  {
+                    "option": "AI Automation"
+                  },
+                  {
+                    "option": "Other"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Budget",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Under $300"
+                  },
+                  {
+                    "option": "$300–$1,000"
+                  },
+                  {
+                    "option": "$1,000–$3,000"
+                  },
+                  {
+                    "option": "$3,000+"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Timeline",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "ASAP"
+                  },
+                  {
+                    "option": "Within 1 month"
+                  },
+                  {
+                    "option": "1–3 months"
+                  },
+                  {
+                    "option": "Just exploring"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Message",
+              "fieldType": "textarea",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "Thanks! I'll be in touch shortly."
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c8452240-5b3a-4bf3-b44d-8357bdb85c0c",
+      "name": "On form submission",
+      "webhookId": "4d69f77d-e761-4fec-abab-a7af968472ae"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You qualify inbound leads for a freelance web and AI automation developer.\nTiers:\n- hot: clear project description, budget $1,000+, timeline within 1 month\n- warm: real need, but modest budget, unclear timeline, or vague description\n- cold: very low budget, no real request, or likely spam\n\nRules:\n- If the message doesn't describe what they want built, the lead cannot be hot.\n- score is an integer from 1 to 10.\n- opening_line is one warm sentence that references what they wrote. Never promise timelines, prices, or availability. No flattery, no emojis.\nLead:\nName: {{ $json.Name }}\nCompany: {{ $json.Company }}\nService: {{ $json.Service }}\nBudget: {{ $json.Budget }}\nTimeline: {{ $json.Timeline }}\nMessage: {{ $json.Message }}\n\n- summary is one sentence describing what the lead wants, written for the business owner. Do not explain the tier.\n- opening_line is one short sentence (under 20 words) that sounds like a friendly human freelancer replying for the first time. Reference what they wrote. Never promise timelines, prices, or availability. No flattery, no emojis.",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        224,
+        0
+      ],
+      "id": "2695297c-6161-4449-832a-2c01fdda704f",
+      "name": "Basic LLM Chain",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"tier\": \"hot\",\n  \"score\": 8,\n  \"summary\": \"Wants an e-commerce site with payment integration, starting this month.\",\n  \"opening_line\": \"An online store for your fabric business sounds like a great project.\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        208
+      ],
+      "id": "aa16a6f2-4f6b-47d2-a114-48b2aa16fc1a",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        112,
+        208
+      ],
+      "id": "59cbd4b5-76d5-4467-9641-91e55e0ae7ed",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "Q0YMBXJo6kr9Qe8Q",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID_HERE",
+          "mode": "list",
+          "cachedResultName": "AI AUTOMATION 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID_HERE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID_HERE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Submitted At": "={{ $('On form submission').item.json.submittedAt.toDateTime(\"\") }}",
+            "Name": "={{ $('On form submission').item.json.Name }}",
+            "Email": "={{ $('On form submission').item.json.Email }}",
+            "Company": "={{ $('On form submission').item.json.Company }}",
+            "Service": "={{ $('On form submission').item.json.Service }}",
+            "Budget": "={{ $('On form submission').item.json.Budget }}",
+            "Timeline": "={{ $('On form submission').item.json.Timeline }}",
+            "Message": "={{ $('On form submission').item.json.Message }}",
+            "Tier": "={{ $json.output.tier }}",
+            "Score": "={{ $json.output.score }}",
+            "Summary": "={{ $json.output.summary }}",
+            "Status": "new"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Submitted At",
+              "displayName": "Submitted At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Service",
+              "displayName": "Service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timeline",
+              "displayName": "Timeline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tier",
+              "displayName": "Tier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        592,
+        0
+      ],
+      "id": "caa2af20-943b-484d-81f1-6619b440911c",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "0FCmyl8THgMKK5lu",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Basic LLM Chain').item.json.output.tier }}",
+                    "rightValue": "cold",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "955fdb3e-6cf9-45ea-b165-08849a52b807"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cold"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "b7e0495b-5e07-4dca-afaa-6c6892200357",
+                    "leftValue": "={{ $('Basic LLM Chain').item.json.output.tier }}",
+                    "rightValue": "warm",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "warm"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "67082f1e-af2c-49b7-bbab-8c633382234c",
+                    "leftValue": "={{ $('Basic LLM Chain').item.json.output.tier }}",
+                    "rightValue": "hot",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "hot"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        784,
+        -32
+      ],
+      "id": "6034f831-8257-4dc5-95c8-98f1ca6825f0",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "YOUR_SLACK_CHANNEL_ID",
+          "mode": "list",
+          "cachedResultName": "leads"
+        },
+        "text": "⚠️ Lead couldn't be classified, check the sheet.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        896,
+        208
+      ],
+      "id": "a45ea19d-93d1-4473-9d94-97721163fb6a",
+      "name": "Send a message1",
+      "webhookId": "428a0e01-3ee5-49ab-a9e1-7f6b5dfc704d",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "923qincmw42kK5nY",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "YOUR_SLACK_CHANNEL_ID",
+          "mode": "list",
+          "cachedResultName": "leads"
+        },
+        "text": "=🔥 Hot lead: {{ $('On form submission').item.json.Name }} ({{ $('On form submission').item.json.Company }})\n{{ $('On form submission').item.json.Service }} · {{ $('On form submission').item.json.Budget }} · {{ $('On form submission').item.json.Timeline }}\n{{ $('Basic LLM Chain').item.json.output.summary }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1024,
+        16
+      ],
+      "id": "71323eb1-ef54-45db-98b6-8e4e4ff96396",
+      "name": "Send hot lead to slack",
+      "webhookId": "bba21f27-e8d4-4a4c-a7b3-4e75669fa3c1",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "923qincmw42kK5nY",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json.Email }}",
+        "subject": "=Re: your {{ $('On form submission').item.json.Service }} inquiry",
+        "emailType": "text",
+        "message": "=Hi {{ $('On form submission').item.json.Name.split(' ')[0] }},\n\n{{ $('Basic LLM Chain').item.json.output.opening_line }}\n\nTo point you in the right direction, could you tell me a bit more about your timeline and what you'd like to spend? That'll help me put together something realistic for you.\n\nBest,\nOpeyemi",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        -176
+      ],
+      "id": "33be3003-e3b2-4dd8-a71a-20ded812971f",
+      "name": "Warm email",
+      "webhookId": "e7f3a4e2-7961-4e72-9b05-50ec260fd17e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7LgRLUHu8dhMZnps",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json.Email }}",
+        "subject": "=Thanks for reaching out",
+        "emailType": "text",
+        "message": "=Hi {{ $('On form submission').item.json.Name.split(' ')[0] }},\n\nThanks for getting in touch. I wanted to make sure this reached you, even though it looks like you might still be exploring your options.\n\nFeel free to reach out whenever you're ready to move forward, and take a look at some of my work here in the meantime: https://opeabiodun.com\n\nBest,\nOpeyemi",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        -352
+      ],
+      "id": "4b28f4b0-4de8-48e2-bec9-ceafad17e4ef",
+      "name": "Cold email",
+      "webhookId": "e7f3a4e2-7961-4e72-9b05-50ec260fd17e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7LgRLUHu8dhMZnps",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json.Email }}",
+        "subject": "=Your {{ $('On form submission').item.json.Service }} project",
+        "emailType": "text",
+        "message": "=Hi {{ $('On form submission').item.json.Name }},  {{ $('Basic LLM Chain').item.json.output.opening_line }}  From what you shared, this sounds like a strong fit. Could we do a quick 20-minute call this week? Grab any time that works here: [https://cal.com/opedev/call-with-me]\nOpeyemi",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1248,
+        16
+      ],
+      "id": "a3a404f3-c773-48ba-b197-34cda91595cf",
+      "name": "Hot email",
+      "webhookId": "e7f3a4e2-7961-4e72-9b05-50ec260fd17e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "7LgRLUHu8dhMZnps",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Cold email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Warm email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send hot lead to slack",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send hot lead to slack": {
+      "main": [
+        [
+          {
+            "node": "Hot email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "rKGlX2zvVeAzj2k8",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "0e481584-369a-4a45-bef3-411546737b20",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c6da915055fb51fb398f0456c3c90f54c5f7ca62df0215a2c4feeb0305a3de0d"
+  },
+  "nodeGroups": [],
+  "id": "PzPU8uKE9arTf9kW",
+  "tags": []
+}

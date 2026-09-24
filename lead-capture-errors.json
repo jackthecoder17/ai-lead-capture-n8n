@@ -1,0 +1,72 @@
+{
+  "name": "Lead Capture – Errors",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5a303684-0e43-4bb3-ba8a-b8207c060e5a",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "YOUR_SLACK_CHANNEL_ID",
+          "mode": "list",
+          "cachedResultName": "leads"
+        },
+        "text": "=❌ {{ $json.workflow.name }} failed at \"{{ $json.execution.lastNodeExecuted }}\" {{ $json.execution.error.message }} {{ $json.execution.url }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "c820dc7b-d75b-40af-af06-2c352c290654",
+      "name": "Send a message",
+      "webhookId": "e24ad64f-a712-4bc1-9981-ba481a870e0e",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "923qincmw42kK5nY",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "9e31c36a-f6b0-4c8a-b9c7-9e54577b37c4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c6da915055fb51fb398f0456c3c90f54c5f7ca62df0215a2c4feeb0305a3de0d"
+  },
+  "nodeGroups": [],
+  "id": "rKGlX2zvVeAzj2k8",
+  "tags": []
+}
